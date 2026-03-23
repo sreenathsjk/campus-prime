@@ -1,0 +1,107 @@
+// firestore.rules
+// ─────────────────────────────────────────────────────────────────────────
+// CampusPrime — Production Firestore Security Rules
+// These rules enforce strict tenant (school) isolation.
+// Each school can ONLY read/write its own data.
+// Super admin access controlled via custom claims.
+// ─────────────────────────────────────────────────────────────────────────
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── HELPER FUNCTIONS ──────────────────────────────────────────────────
+
+    // Is the request from an authenticated user?
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Is the authenticated user the owner of this school document?
+    function isSchoolOwner(schoolId) {
+      return isSignedIn() && request.auth.uid == schoolId;
+    }
+
+    // Is the authenticated user a super admin?
+    // Set custom claim via Admin SDK: admin.auth().setCustomUserClaims(uid, { superAdmin: true })
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.superAdmin == true;
+    }
+
+    // Validate that the incoming data has required fields and correct types
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'class', 'createdAt'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 200
+        && data.class is string;
+    }
+
+    function isValidFee(data) {
+      return data.keys().hasAll(['studentId', 'amount', 'type', 'createdAt'])
+        && data.amount is number
+        && data.amount > 0
+        && data.amount <= 10000000; // max ₹1 crore per receipt
+    }
+
+    // ── SCHOOLS COLLECTION ───────────────────────────────────────────────
+    // /schools/{schoolId}
+    // Each document is owned by the Firebase Auth UID that matches schoolId.
+
+    match /schools/{schoolId} {
+      // School admin can read/update their own profile
+      allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+      allow create: if isSignedIn() && request.auth.uid == schoolId;
+      allow update: if isSchoolOwner(schoolId) || isSuperAdmin();
+      allow delete: if isSuperAdmin(); // Only super admin can delete schools
+
+      // ── STUDENTS SUBCOLLECTION ─────────────────────────────────────────
+      // /schools/{schoolId}/students/{studentId}
+      match /students/{studentId} {
+        allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+        allow create: if isSchoolOwner(schoolId) && isValidStudent(request.resource.data);
+        allow update: if isSchoolOwner(schoolId);
+        allow delete: if isSchoolOwner(schoolId);
+      }
+
+      // ── FEES SUBCOLLECTION ─────────────────────────────────────────────
+      // /schools/{schoolId}/fees/{feeId}
+      match /fees/{feeId} {
+        allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+        allow create: if isSchoolOwner(schoolId) && isValidFee(request.resource.data);
+        allow update: if isSuperAdmin(); // Fee records should not be editable after creation
+        allow delete: if isSuperAdmin(); // Prevent accidental deletion
+      }
+
+      // ── ATTENDANCE SUBCOLLECTION ───────────────────────────────────────
+      // /schools/{schoolId}/attendance/{attendanceId}
+      // Document ID format: "{date}_{studentId}" e.g. "2026-03-21_abc123"
+      match /attendance/{attendanceId} {
+        allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+        allow write:  if isSchoolOwner(schoolId);
+      }
+
+      // ── NOTICES SUBCOLLECTION ──────────────────────────────────────────
+      match /notices/{noticeId} {
+        allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+        allow write:  if isSchoolOwner(schoolId);
+      }
+
+      // ── RESULTS SUBCOLLECTION ─────────────────────────────────────────
+      match /results/{resultId} {
+        allow read:   if isSchoolOwner(schoolId) || isSuperAdmin();
+        allow write:  if isSchoolOwner(schoolId);
+      }
+    }
+
+    // ── SUPER ADMIN COLLECTION ────────────────────────────────────────────
+    // /admin/{docId} — accessible only to super admins
+    match /admin/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ── DENY EVERYTHING ELSE ─────────────────────────────────────────────
+    // This is implicit in Firestore but stated explicitly for clarity.
+    // Any path not matched above is denied by default.
+  }
+}
