@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /pages/dashboard.html
+Disallow: /pages/onboarding.html
+
+Sitemap: https://campusprime.in/sitemap.xml

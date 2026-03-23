@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — CampusPrime</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --primary:#1d4ed8; --primary-dark:#1e3a8a; --primary-light:#dbeafe;
+      --bg:#f0f4ff; --white:#ffffff; --ink:#1a1a2e; --ink2:#3d3d5c;
+      --muted:#8888aa; --border:#dde3f0; --green:#16a34a; --green-bg:#dcfce7;
+      --orange:#ea580c; --orange-bg:#ffedd5; --red:#dc2626; --red-bg:#fef2f2;
+      --sidebar-w: 220px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Sora',sans-serif; background:var(--bg); color:var(--ink); display:flex; min-height:100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width:var(--sidebar-w); background:var(--ink); flex-shrink:0;
+      display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:50;
+    }
+    .sb-logo { padding:20px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .sb-logo-text { font-size:18px; font-weight:800; color:#fff; }
+    .sb-logo-text span { color:#60a5fa; }
+    .sb-school { font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px; }
+
+    .sb-nav { flex:1; padding:12px 0; overflow-y:auto; }
+    .sb-section { padding:8px 16px 4px; font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:1px; text-transform:uppercase; }
+    .sb-link {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px; font-size:13px; font-weight:500; color:rgba(255,255,255,0.65);
+      text-decoration:none; cursor:pointer; border-radius:0;
+      transition:background 0.15s, color 0.15s;
+    }
+    .sb-link:hover { background:rgba(255,255,255,0.07); color:#fff; }
+    .sb-link.active { background:var(--primary); color:#fff; }
+    .sb-icon { font-size:16px; width:20px; text-align:center; }
+
+    .sb-footer { padding:16px; border-top:1px solid rgba(255,255,255,0.08); }
+    .sb-user { display:flex; align-items:center; gap:10px; }
+    .sb-avatar { width:34px;height:34px; border-radius:50%; background:var(--primary); display:flex;align-items:center;justify-content:center; font-size:14px;font-weight:700;color:#fff; }
+    .sb-user-info { flex:1; }
+    .sb-user-name { font-size:13px; font-weight:600; color:#fff; }
+    .sb-user-role { font-size:11px; color:rgba(255,255,255,0.4); }
+    .sb-signout { font-size:11px; color:rgba(255,255,255,0.4); cursor:pointer; text-decoration:underline; }
+    .sb-signout:hover { color:#fff; }
+
+    /* TRIAL BANNER */
+    .trial-banner {
+      background:linear-gradient(90deg,#f59e0b,#d97706);
+      padding:10px 24px;
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    }
+    .trial-banner span { font-size:13px; font-weight:600; color:#fff; }
+    .btn-upgrade { background:#fff; color:#d97706; font-size:12px; font-weight:700; padding:5px 14px; border-radius:6px; text-decoration:none; }
+
+    /* MAIN */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+    .topbar {
+      background:var(--white); border-bottom:1px solid var(--border);
+      padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .topbar-title { font-size:18px; font-weight:700; color:var(--ink); }
+    .topbar-actions { display:flex; gap:10px; align-items:center; }
+    .btn-sm {
+      padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600;
+      font-family:'Sora',sans-serif; cursor:pointer; border:none; transition:all 0.15s;
+    }
+    .btn-primary-sm { background:var(--primary); color:#fff; }
+    .btn-primary-sm:hover { background:var(--primary-dark); }
+    .btn-outline-sm { background:transparent; border:1.5px solid var(--border); color:var(--ink2); }
+    .btn-outline-sm:hover { border-color:var(--primary); color:var(--primary); }
+
+    .content { padding:24px; flex:1; }
+
+    /* PAGES */
+    .page { display:none; }
+    .page.active { display:block; }
+
+    /* STATS */
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--white); border:1px solid var(--border); border-radius:14px; padding:20px;
+      position:relative; overflow:hidden;
+    }
+    .stat-card::before { content:''; position:absolute; top:0;right:0; width:60px;height:60px; border-radius:0 14px 0 60px; opacity:0.08; }
+    .stat-card.blue::before { background:var(--primary); }
+    .stat-card.green::before { background:var(--green); }
+    .stat-card.orange::before { background:var(--orange); }
+    .stat-card.red::before { background:var(--red); }
+    .stat-icon { font-size:20px; margin-bottom:10px; }
+    .stat-val { font-size:28px; font-weight:800; color:var(--ink); letter-spacing:-1px; }
+    .stat-label { font-size:12px; color:var(--muted); margin-top:2px; }
+    .stat-change { font-size:11px; margin-top:6px; font-weight:600; }
+    .stat-change.up { color:var(--green); }
+    .stat-change.down { color:var(--red); }
+
+    /* TABLES */
+    .card { background:var(--white); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:20px; }
+    .card-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .card-title { font-size:14px; font-weight:700; color:var(--ink); }
+    table { width:100%; border-collapse:collapse; }
+    th { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; padding:10px 16px; text-align:left; background:var(--bg); border-bottom:1px solid var(--border); }
+    td { padding:12px 16px; font-size:13px; color:var(--ink2); border-bottom:1px solid rgba(221,227,240,0.5); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--bg); }
+
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+    .badge-green { background:var(--green-bg); color:var(--green); }
+    .badge-orange { background:var(--orange-bg); color:var(--orange); }
+    .badge-red { background:var(--red-bg); color:var(--red); }
+    .badge-blue { background:var(--primary-light); color:var(--primary); }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; padding:20px; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:var(--white); border-radius:16px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+    .modal-title { font-size:18px; font-weight:700; color:var(--ink); margin-bottom:20px; }
+    .field { margin-bottom:14px; }
+    label { display:block; font-size:12px; font-weight:600; color:var(--ink2); margin-bottom:5px; }
+    input, select, textarea {
+      width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:9px;
+      font-size:13px; font-family:'Sora',sans-serif; color:var(--ink); outline:none;
+      background:var(--bg); transition:border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color:var(--primary); background:var(--white); }
+    .modal-actions { display:flex; gap:10px; margin-top:20px; }
+    .modal-actions .btn-sm { flex:1; padding:11px; }
+
+    /* FEE RECEIPT PREVIEW */
+    .receipt-preview {
+      background:var(--bg); border:1px dashed var(--border); border-radius:10px;
+      padding:16px; font-size:13px; margin-top:12px;
+    }
+    .receipt-row { display:flex; justify-content:space-between; margin-bottom:4px; }
+    .receipt-total { font-weight:800; color:var(--ink); font-size:15px; border-top:1px solid var(--border); margin-top:8px; padding-top:8px; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align:center; padding:60px 24px; }
+    .empty-icon { font-size:48px; margin-bottom:14px; }
+    .empty-title { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+    .empty-sub { font-size:13px; color:var(--muted); margin-bottom:20px; }
+
+    /* MOBILE SIDEBAR TOGGLE */
+    .mobile-menu-btn { display:none; background:none; border:none; font-size:22px; cursor:pointer; }
+    @media(max-width:768px) {
+      .sidebar { transform:translateX(-100%); transition:transform 0.3s; }
+      .sidebar.open { transform:none; }
+      .main { margin-left:0; }
+      .mobile-menu-btn { display:block; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+    }
+
+    /* QUICK ACTIONS */
+    .quick-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
+    .quick-btn {
+      background:var(--white); border:1px solid var(--border); border-radius:12px; padding:16px;
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      cursor:pointer; text-decoration:none; text-align:center;
+      font-family:'Sora',sans-serif; transition:box-shadow 0.2s, transform 0.2s;
+    }
+    .quick-btn:hover { box-shadow:0 8px 24px rgba(29,78,216,0.12); transform:translateY(-2px); }
+    .quick-btn-icon { font-size:24px; }
+    .quick-btn-label { font-size:12px; font-weight:600; color:var(--ink2); }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-text">Campus<span>Prime</span></div>
+    <div class="sb-school" id="sbSchoolName">Loading...</div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Main</div>
+    <a class="sb-link active" onclick="showPage('dashboard')"><span class="sb-icon">📊</span> Dashboard</a>
+    <a class="sb-link" onclick="showPage('students')"><span class="sb-icon">👨‍🎓</span> Students</a>
+    <a class="sb-link" onclick="showPage('fees')"><span class="sb-icon">💸</span> Fee Collection</a>
+    <a class="sb-link" onclick="showPage('attendance')"><span class="sb-icon">📋</span> Attendance</a>
+
+    <div class="sb-section">Academics</div>
+    <a class="sb-link" onclick="showPage('results')"><span class="sb-icon">📝</span> Exam Results</a>
+    <a class="sb-link" onclick="showPage('notices')"><span class="sb-icon">📢</span> Notices</a>
+
+    <div class="sb-section">Admin</div>
+    <a class="sb-link" onclick="showPage('settings')"><span class="sb-icon">⚙️</span> School Settings</a>
+    <a class="sb-link" onclick="showPage('billing')"><span class="sb-icon">💳</span> Billing & Plan</a>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">?</div>
+      <div class="sb-user-info">
+        <div class="sb-user-name" id="sbUserName">Loading...</div>
+        <div class="sb-user-role">School Admin</div>
+      </div>
+    </div>
+    <div class="sb-signout" onclick="signOut()" style="margin-top:8px;">Sign out</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Trial Banner -->
+  <div class="trial-banner" id="trialBanner" style="display:none;">
+    <span>⚠️ Your free trial ends in <strong id="trialDays">--</strong> days</span>
+    <a href="#" onclick="showPage('billing')" class="btn-upgrade">Upgrade Now</a>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-sm btn-outline-sm" onclick="showPage('notices')">📢 Send Notice</button>
+      <button class="btn-sm btn-primary-sm" onclick="openFeeModal()">+ Collect Fee</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon">👨‍🎓</div>
+          <div class="stat-val" id="stat-students">0</div>
+          <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">💸</div>
+          <div class="stat-val" id="stat-collected">₹0</div>
+          <div class="stat-label">Fees Collected (This Month)</div>
+          <div class="stat-change up">↑ vs last month</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-val" id="stat-pending">₹0</div>
+          <div class="stat-label">Fee Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-val" id="stat-attendance">--%</div>
+          <div class="stat-label">Avg Attendance (This Week)</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px;">Quick Actions</h3>
+      <div class="quick-grid">
+        <a class="quick-btn" onclick="openFeeModal()">
+          <span class="quick-btn-icon">💸</span>
+          <span class="quick-btn-label">Collect Fee</span>
+        </a>
+        <a class="quick-btn" onclick="showPage('attendance')">
+          <span class="quick-btn-icon">📋</span>
+          <span class="quick-btn-label">Mark Attendance</span>
+        </a>
+        <a class="quick-btn" onclick="openStudentModal()">
+          <span class="quick-btn-icon">➕</span>
+          <span class="quick-btn-label">Add Student</span>
+        </a>
+        <a class="quick-btn" onclick="showPage('notices')">
+          <span class="quick-btn-icon">📢</span>
+          <span class="quick-btn-label">Send Notice</span>
+        </a>
+        <a class="quick-btn" onclick="showPage('results')">
+          <span class="quick-btn-icon">📝</span>
+          <span class="quick-btn-label">Enter Results</span>
+        </a>
+        <a class="quick-btn" onclick="showPage('billing')">
+          <span class="quick-btn-icon">💳</span>
+          <span class="quick-btn-label">Upgrade Plan</span>
+        </a>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Fee Payments</div>
+          <button class="btn-sm btn-outline-sm" onclick="showPage('fees')">View All</button>
+        </div>
+        <table>
+          <thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody id="recentFeesBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── STUDENTS ── -->
+    <div class="page" id="page-students">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <input type="text" id="studentSearch" placeholder="🔍 Search students..." style="max-width:280px;" oninput="filterStudents()"/>
+        <div style="display:flex;gap:8px;">
+          <select id="classFilter" style="width:auto;" onchange="filterStudents()">
+            <option value="">All Classes</option>
+          </select>
+          <button class="btn-sm btn-primary-sm" onclick="openStudentModal()">+ Add Student</button>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Name</th><th>Class</th><th>Phone (Parent)</th><th>Fee Status</th><th>Actions</th></tr></thead>
+          <tbody id="studentsBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px;">Loading students...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── FEES ── -->
+    <div class="page" id="page-fees">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;">
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-val" id="feeCollected">₹0</div><div class="stat-label">Collected This Month</div></div>
+        <div class="stat-card orange"><div class="stat-icon">⏳</div><div class="stat-val" id="feePending">₹0</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-val" id="feeCount">0</div><div class="stat-label">Receipts Issued</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Fee Records</div>
+          <button class="btn-sm btn-primary-sm" onclick="openFeeModal()">+ Collect Fee</button>
+        </div>
+        <table>
+          <thead><tr><th>Receipt #</th><th>Student</th><th>Class</th><th>Amount</th><th>Type</th><th>Date</th><th>WhatsApp</th></tr></thead>
+          <tbody id="feesBody"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px;">No fee records yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ATTENDANCE ── -->
+    <div class="page" id="page-attendance">
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+        <select id="attClassFilter" style="width:auto;">
+          <option value="">Select Class</option>
+        </select>
+        <input type="date" id="attDate" style="width:auto;" value=""/>
+        <button class="btn-sm btn-primary-sm" onclick="loadAttendance()">Load</button>
+      </div>
+      <div class="card" id="attendanceCard">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Select a class to mark attendance</div>
+          <div class="empty-sub">Choose a class and date above to begin</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RESULTS ── -->
+    <div class="page" id="page-results">
+      <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-title">Exam Results Module</div>
+        <div class="empty-sub">Enter marks, auto-generate PDF report cards, send results on WhatsApp to parents</div>
+        <button class="btn-sm btn-primary-sm" onclick="alert('Coming soon! This module is under development.')">Enter Marks</button>
+      </div>
+    </div>
+
+    <!-- ── NOTICES ── -->
+    <div class="page" id="page-notices">
+      <div class="card" style="max-width:580px;">
+        <div class="card-header"><div class="card-title">📢 Send School Notice via WhatsApp</div></div>
+        <div style="padding:20px;">
+          <div class="field">
+            <label>Send To</label>
+            <select id="noticeTo">
+              <option value="all">All Parents (Entire School)</option>
+              <option value="class">Specific Class</option>
+            </select>
+          </div>
+          <div class="field" id="noticeClassField" style="display:none;">
+            <label>Select Class</label>
+            <select id="noticeClass"></select>
+          </div>
+          <div class="field">
+            <label>Message</label>
+            <textarea id="noticeMsg" rows="4" placeholder="e.g. School will remain closed on Monday due to elections. Thank you."></textarea>
+          </div>
+          <div style="background:var(--green-bg);border-radius:8px;padding:12px;font-size:12px;color:var(--green);margin-bottom:14px;">
+            💬 This will open WhatsApp Web with the message pre-filled. You'll need to send it manually via your WhatsApp Business number.
+          </div>
+          <button class="btn-sm btn-primary-sm" style="width:100%;" onclick="sendNotice()">Send via WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="page" id="page-settings">
+      <div class="card" style="max-width:560px;">
+        <div class="card-header"><div class="card-title">School Settings</div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+          <div class="field"><label>School Name</label><input type="text" id="set-schoolName"/></div>
+          <div class="field"><label>Principal Name</label><input type="text" id="set-ownerName"/></div>
+          <div class="field"><label>Contact Phone</label><input type="tel" id="set-phone"/></div>
+          <div class="field"><label>WhatsApp Business Number (with country code)</label><input type="text" id="set-waNumber" placeholder="919876543210"/></div>
+          <div class="field"><label>City</label><input type="text" id="set-city"/></div>
+          <button class="btn-sm btn-primary-sm" onclick="saveSettings()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BILLING ── -->
+    <div class="page" id="page-billing">
+      <div class="card" style="max-width:560px;">
+        <div class="card-header"><div class="card-title">Billing & Subscription</div></div>
+        <div style="padding:24px;">
+          <div style="background:var(--orange-bg);border-radius:10px;padding:16px;margin-bottom:20px;">
+            <div style="font-size:13px;font-weight:700;color:var(--orange);">Free Trial Active</div>
+            <div style="font-size:12px;color:var(--orange);margin-top:4px;">Trial ends in <strong id="billingDays">--</strong> days. Upgrade to continue uninterrupted access.</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px;">Select a Plan</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+            <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-weight:700;font-size:14px;">Starter</div><div style="font-size:12px;color:var(--muted);">Up to 500 students</div></div>
+              <div style="font-weight:800;color:var(--primary);">₹999/mo</div>
+            </div>
+            <div style="border:2px solid var(--primary);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;background:var(--primary-light);">
+              <div><div style="font-weight:700;font-size:14px;">Growth ⭐</div><div style="font-size:12px;color:var(--ink2);">Up to 2,000 students</div></div>
+              <div style="font-weight:800;color:var(--primary);">₹1,999/mo</div>
+            </div>
+            <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
+              <div><div style="font-weight:700;font-size:14px;">Institution</div><div style="font-size:12px;color:var(--muted);">Unlimited</div></div>
+              <div style="font-weight:800;color:var(--primary);">₹4,999/mo</div>
+            </div>
+          </div>
+          <button class="btn-sm btn-primary-sm" style="width:100%;" onclick="openPayment()">💳 Pay with Razorpay</button>
+          <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Secure payment · GST invoice provided · Cancel anytime</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODALS -->
+
+<!-- Fee Collection Modal -->
+<div class="modal-overlay" id="feeModal">
+  <div class="modal">
+    <div class="modal-title">💸 Collect Fee</div>
+    <div class="field"><label>Student</label>
+      <select id="feeStudent"><option value="">Select student...</option></select>
+    </div>
+    <div class="field"><label>Fee Type</label>
+      <select id="feeType">
+        <option>Term Fee</option><option>Annual Fee</option><option>Exam Fee</option>
+        <option>Transport Fee</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field"><label>Amount (₹)</label>
+      <input type="number" id="feeAmount" placeholder="e.g. 5000"/>
+    </div>
+    <div class="field"><label>Payment Mode</label>
+      <select id="feeMode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option></select>
+    </div>
+
+    <div class="receipt-preview" id="receiptPreview" style="display:none;">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;">📄 Receipt Preview</div>
+      <div class="receipt-row"><span>Student</span><span id="rStudent">-</span></div>
+      <div class="receipt-row"><span>Fee Type</span><span id="rType">-</span></div>
+      <div class="receipt-row"><span>Payment Mode</span><span id="rMode">-</span></div>
+      <div class="receipt-row receipt-total"><span>Total</span><span id="rAmount">₹0</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Receipt will be sent on WhatsApp to parent.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-sm btn-outline-sm" onclick="closeFeeModal()">Cancel</button>
+      <button class="btn-sm btn-primary-sm" onclick="previewReceipt()">Preview</button>
+      <button class="btn-sm" style="background:var(--green);color:#fff;flex:1;" id="collectBtn" onclick="collectFee()" style="display:none;">✓ Collect & Send WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal">
+    <div class="modal-title">➕ Add Student</div>
+    <div class="field"><label>Full Name</label><input type="text" id="sName" placeholder="e.g. Ramya Devi"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field"><label>Class</label><input type="text" id="sClass" placeholder="e.g. 9A"/></div>
+      <div class="field"><label>Roll Number</label><input type="number" id="sRoll" placeholder="e.g. 15"/></div>
+    </div>
+    <div class="field"><label>Parent Phone (WhatsApp)</label><input type="tel" id="sPhone" placeholder="9876543210"/></div>
+    <div class="field"><label>Annual Fee (₹)</label><input type="number" id="sAnnualFee" placeholder="e.g. 25000"/></div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-outline-sm" onclick="closeStudentModal()">Cancel</button>
+      <button class="btn-sm btn-primary-sm" onclick="addStudent()">Add Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<!-- Razorpay -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+let schoolId, schoolProfile, allStudents = [], allFees = [];
+
+// ── INIT ──
+requireAuth(async (user) => {
+  schoolId = user.uid;
+  schoolProfile = await getSchoolProfile(user.uid);
+  if (!schoolProfile) { signOut(); return; }
+
+  document.getElementById('sbSchoolName').textContent = schoolProfile.schoolName || 'Your School';
+  document.getElementById('sbUserName').textContent = schoolProfile.ownerName || user.email;
+  document.getElementById('sbAvatar').textContent = (schoolProfile.ownerName || 'U')[0].toUpperCase();
+
+  // Trial banner
+  if (schoolProfile.plan === 'trial' && schoolProfile.trialEndsAt) {
+    const daysLeft = Math.ceil((schoolProfile.trialEndsAt.toDate() - Date.now()) / 86400000);
+    if (daysLeft <= 30) {
+      document.getElementById('trialBanner').style.display = 'flex';
+      document.getElementById('trialDays').textContent = Math.max(0, daysLeft);
+      document.getElementById('billingDays').textContent = Math.max(0, daysLeft);
+    }
+  }
+
+  // Default date for attendance
+  document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
+
+  loadStudents();
+  loadFees();
+  populateSettings();
+});
+
+// ── NAVIGATION ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const titles = { dashboard:'Dashboard', students:'Students', fees:'Fee Collection', attendance:'Attendance', results:'Exam Results', notices:'Send Notice', settings:'School Settings', billing:'Billing & Plan' };
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  document.getElementById('sidebar').classList.remove('open');
+  if (name === 'dashboard') loadDashboardStats();
+}
+
+// ── LOAD STUDENTS ──
+async function loadStudents() {
+  try {
+    const snap = await db.collection('schools').doc(schoolId).collection('students').get();
+    allStudents = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    allStudents.sort((a,b) => a.name.localeCompare(b.name));
+    renderStudents(allStudents);
+    populateClassDropdowns();
+    populateFeeStudentDropdown();
+    loadDashboardStats();
+  } catch(e) { console.error(e); }
+}
+
+function renderStudents(list) {
+  const body = document.getElementById('studentsBody');
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👨‍🎓</div><div class="empty-title">No students yet</div><div class="empty-sub">Add your first student to get started</div><button class="btn-sm btn-primary-sm" onclick="openStudentModal()">+ Add Student</button></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = list.map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.class || '-'}</td>
+      <td>${s.phone || '-'}</td>
+      <td><span class="badge ${s.feePaid ? 'badge-green':'badge-orange'}">${s.feePaid ? '✓ Paid':'Pending'}</span></td>
+      <td>
+        <button class="btn-sm btn-outline-sm" onclick="quickFee('${s.id}')">Collect Fee</button>
+        ${s.phone ? `<a href="https://wa.me/91${s.phone}?text=Dear%20Parent%2C%20this%20is%20a%20message%20from%20${encodeURIComponent(schoolProfile.schoolName||'school')}" target="_blank" class="btn-sm btn-outline-sm" style="margin-left:4px;">WhatsApp</a>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterStudents() {
+  const q = document.getElementById('studentSearch').value.toLowerCase();
+  const cls = document.getElementById('classFilter').value;
+  let list = allStudents;
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q) || (s.phone||'').includes(q));
+  if (cls) list = list.filter(s => s.class === cls);
+  renderStudents(list);
+}
+
+function populateClassDropdowns() {
+  const classes = [...new Set(allStudents.map(s => s.class).filter(Boolean))].sort();
+  ['classFilter','attClassFilter','noticeClass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const curr = el.value;
+    el.innerHTML = id === 'classFilter' ? '<option value="">All Classes</option>' : '<option value="">Select Class</option>';
+    classes.forEach(c => el.innerHTML += `<option value="${c}" ${c===curr?'selected':''}>${c}</option>`);
+  });
+}
+
+function populateFeeStudentDropdown() {
+  const sel = document.getElementById('feeStudent');
+  sel.innerHTML = '<option value="">Select student...</option>';
+  allStudents.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.name} — ${s.class||''}</option>`);
+}
+
+// ── LOAD FEES ──
+async function loadFees() {
+  try {
+    const snap = await db.collection('schools').doc(schoolId).collection('fees')
+      .orderBy ? 
+      await db.collection('schools').doc(schoolId).collection('fees').get() :
+      await db.collection('schools').doc(schoolId).collection('fees').get();
+    allFees = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    allFees.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    renderFees();
+    loadDashboardStats();
+  } catch(e) { console.error(e); }
+}
+
+function renderFees() {
+  const body = document.getElementById('feesBody');
+  if (!allFees.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">No fee records yet. Collect the first fee!</td></tr>'; return; }
+  body.innerHTML = allFees.map((f,i) => {
+    const d = f.createdAt?.toDate ? f.createdAt.toDate() : new Date();
+    return `<tr>
+      <td>#${String(allFees.length - i).padStart(4,'0')}</td>
+      <td>${f.studentName||'-'}</td>
+      <td>${f.class||'-'}</td>
+      <td>₹${(f.amount||0).toLocaleString('en-IN')}</td>
+      <td>${f.type||'-'}</td>
+      <td>${d.toLocaleDateString('en-IN')}</td>
+      <td>${f.phone ? `<a href="https://wa.me/91${f.phone}?text=Dear%20Parent%2C%20fee%20of%20%E2%82%B9${f.amount}%20received.%20Receipt%20%23${String(allFees.length-i).padStart(4,'0')}%20-%20Thank%20you%2C%20${encodeURIComponent(schoolProfile.schoolName||'')}" target="_blank" style="color:var(--green);text-decoration:none;">📲 Send</a>` : '-'}</td>
+    </tr>`;
+  }).join('');
+
+  const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0,0,0,0);
+  const collected = allFees.filter(f => f.createdAt?.toDate && f.createdAt.toDate() >= thisMonth).reduce((s,f) => s+(f.amount||0), 0);
+  document.getElementById('feeCollected').textContent = '₹'+collected.toLocaleString('en-IN');
+  document.getElementById('feeCount').textContent = allFees.length;
+
+  // Recent fees for dashboard
+  const rb = document.getElementById('recentFeesBody');
+  const recent = allFees.slice(0,5);
+  if (!recent.length) { rb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted);">No payments yet</td></tr>'; return; }
+  rb.innerHTML = recent.map(f => {
+    const d = f.createdAt?.toDate ? f.createdAt.toDate() : new Date();
+    return `<tr><td>${f.studentName||'-'}</td><td>${f.class||'-'}</td><td>₹${(f.amount||0).toLocaleString('en-IN')}</td><td>${d.toLocaleDateString('en-IN')}</td><td><span class="badge badge-green">Paid</span></td></tr>`;
+  }).join('');
+}
+
+function loadDashboardStats() {
+  document.getElementById('stat-students').textContent = allStudents.length;
+  const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0,0,0,0);
+  const collected = allFees.filter(f => f.createdAt?.toDate && f.createdAt.toDate() >= thisMonth).reduce((s,f) => s+(f.amount||0), 0);
+  document.getElementById('stat-collected').textContent = '₹'+collected.toLocaleString('en-IN');
+  const totalDue = allStudents.reduce((s,st) => s+(st.annualFee||0), 0);
+  const totalPaid = allFees.reduce((s,f) => s+(f.amount||0), 0);
+  document.getElementById('stat-pending').textContent = '₹'+Math.max(0,totalDue-totalPaid).toLocaleString('en-IN');
+  document.getElementById('feePending').textContent = '₹'+Math.max(0,totalDue-totalPaid).toLocaleString('en-IN');
+}
+
+// ── FEE MODAL ──
+function openFeeModal() { document.getElementById('feeModal').classList.add('show'); document.getElementById('receiptPreview').style.display='none'; document.getElementById('collectBtn').style.display='none'; }
+function closeFeeModal() { document.getElementById('feeModal').classList.remove('show'); }
+function quickFee(sid) {
+  openFeeModal();
+  document.getElementById('feeStudent').value = sid;
+}
+
+function previewReceipt() {
+  const sid = document.getElementById('feeStudent').value;
+  const amount = parseFloat(document.getElementById('feeAmount').value);
+  if (!sid) { alert('Please select a student.'); return; }
+  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  const student = allStudents.find(s => s.id === sid);
+  document.getElementById('rStudent').textContent = student?.name || '-';
+  document.getElementById('rType').textContent = document.getElementById('feeType').value;
+  document.getElementById('rMode').textContent = document.getElementById('feeMode').value;
+  document.getElementById('rAmount').textContent = '₹'+amount.toLocaleString('en-IN');
+  document.getElementById('receiptPreview').style.display = 'block';
+  document.getElementById('collectBtn').style.display = 'block';
+}
+
+async function collectFee() {
+  const sid = document.getElementById('feeStudent').value;
+  const amount = parseFloat(document.getElementById('feeAmount').value);
+  const student = allStudents.find(s => s.id === sid);
+  if (!student) return;
+
+  try {
+    const feeData = {
+      studentId: sid,
+      studentName: student.name,
+      class: student.class || '',
+      phone: student.phone || '',
+      amount,
+      type: document.getElementById('feeType').value,
+      mode: document.getElementById('feeMode').value,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('schools').doc(schoolId).collection('fees').add(feeData);
+    closeFeeModal();
+    await loadFees();
+    document.getElementById('feeAmount').value = '';
+
+    // WhatsApp receipt
+    if (student.phone) {
+      const msg = `Dear Parent,\n\nFee receipt from ${schoolProfile.schoolName||'School'}:\n\nStudent: ${student.name}\nFee Type: ${feeData.type}\nAmount: ₹${amount.toLocaleString('en-IN')}\nMode: ${feeData.mode}\nDate: ${new Date().toLocaleDateString('en-IN')}\n\nThank you! 🙏`;
+      window.open(`https://wa.me/91${student.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+    alert('Fee collected successfully! WhatsApp receipt opened.');
+  } catch(e) {
+    alert('Error saving fee. Please try again.');
+    console.error(e);
+  }
+}
+
+// ── STUDENT MODAL ──
+function openStudentModal() { document.getElementById('studentModal').classList.add('show'); }
+function closeStudentModal() { document.getElementById('studentModal').classList.remove('show'); }
+
+async function addStudent() {
+  const name = document.getElementById('sName').value.trim();
+  const cls = document.getElementById('sClass').value.trim();
+  const phone = document.getElementById('sPhone').value.trim();
+  const roll = document.getElementById('sRoll').value;
+  const annualFee = parseFloat(document.getElementById('sAnnualFee').value) || 0;
+  if (!name || !cls) { alert('Student name and class are required.'); return; }
+  try {
+    await db.collection('schools').doc(schoolId).collection('students').add({
+      name, class: cls, phone, roll: parseInt(roll)||0, annualFee, feePaid:false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeStudentModal();
+    ['sName','sClass','sPhone','sRoll','sAnnualFee'].forEach(id => document.getElementById(id).value = '');
+    await loadStudents();
+    showPage('students');
+  } catch(e) { alert('Error adding student.'); console.error(e); }
+}
+
+// ── ATTENDANCE ──
+async function loadAttendance() {
+  const cls = document.getElementById('attClassFilter').value;
+  const date = document.getElementById('attDate').value;
+  if (!cls || !date) { alert('Please select a class and date.'); return; }
+  const classStudents = allStudents.filter(s => s.class === cls);
+  if (!classStudents.length) { document.getElementById('attendanceCard').innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">No students in this class</div></div>'; return; }
+
+  // Load existing attendance for this date
+  const attSnap = await db.collection('schools').doc(schoolId).collection('attendance')
+    .where('date','==',date).where('class','==',cls).get();
+  const existingAtt = {};
+  attSnap.docs.forEach(d => { existingAtt[d.data().studentId] = d.data().status; });
+
+  document.getElementById('attendanceCard').innerHTML = `
+    <div class="card-header">
+      <div class="card-title">Attendance — Class ${cls} — ${new Date(date).toLocaleDateString('en-IN', {weekday:'long',day:'numeric',month:'long'})}</div>
+    </div>
+    <table>
+      <thead><tr><th>Roll</th><th>Student Name</th><th>Status</th><th>WhatsApp (if Absent)</th></tr></thead>
+      <tbody>${classStudents.map(s => `
+        <tr>
+          <td>${s.roll||'-'}</td>
+          <td>${s.name}</td>
+          <td>
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="att_${s.id}" value="present" ${existingAtt[s.id]==='present'||!existingAtt[s.id]?'checked':''} style="width:auto;"/> Present
+            </label>
+            &nbsp;&nbsp;
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="att_${s.id}" value="absent" ${existingAtt[s.id]==='absent'?'checked':''} style="width:auto;"/> Absent
+            </label>
+          </td>
+          <td>${s.phone ? `<a href="https://wa.me/91${s.phone}?text=Dear%20Parent%2C%20${encodeURIComponent(s.name)}%20was%20marked%20absent%20today%20(${date})%20at%20${encodeURIComponent(schoolProfile.schoolName||'school')}.%20Please%20inform%20if%20there%20is%20any%20issue." target="_blank" style="color:var(--orange);font-size:12px;">📲 Notify</a>` : '-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="padding:16px;">
+      <button class="btn-sm btn-primary-sm" onclick="saveAttendance('${cls}','${date}',${JSON.stringify(classStudents.map(s=>s.id))})">Save Attendance</button>
+    </div>
+  `;
+}
+
+async function saveAttendance(cls, date, studentIds) {
+  const batch = db.batch();
+  studentIds.forEach(sid => {
+    const radios = document.querySelectorAll(`input[name="att_${sid}"]`);
+    let status = 'present';
+    radios.forEach(r => { if(r.checked) status = r.value; });
+    const ref = db.collection('schools').doc(schoolId).collection('attendance').doc(`${date}_${sid}`);
+    batch.set(ref, { studentId:sid, class:cls, date, status, savedAt:firebase.firestore.FieldValue.serverTimestamp() });
+  });
+  await batch.commit();
+  alert('Attendance saved successfully!');
+}
+
+// ── NOTICES ──
+document.getElementById('noticeTo').addEventListener('change', function() {
+  document.getElementById('noticeClassField').style.display = this.value === 'class' ? 'block' : 'none';
+});
+
+function sendNotice() {
+  const msg = document.getElementById('noticeMsg').value.trim();
+  if (!msg) { alert('Please write a message.'); return; }
+  const school = schoolProfile.schoolName || 'School';
+  const full = `📢 *${school}*\n\n${msg}\n\n_Sent via CampusPrime_`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(full)}`, '_blank');
+}
+
+// ── SETTINGS ──
+function populateSettings() {
+  if (!schoolProfile) return;
+  document.getElementById('set-schoolName').value = schoolProfile.schoolName || '';
+  document.getElementById('set-ownerName').value = schoolProfile.ownerName || '';
+  document.getElementById('set-phone').value = schoolProfile.phone || '';
+  document.getElementById('set-waNumber').value = schoolProfile.waNumber || '';
+  document.getElementById('set-city').value = schoolProfile.city || '';
+}
+
+async function saveSettings() {
+  const updates = {
+    schoolName: document.getElementById('set-schoolName').value.trim(),
+    ownerName:  document.getElementById('set-ownerName').value.trim(),
+    phone:      document.getElementById('set-phone').value.trim(),
+    waNumber:   document.getElementById('set-waNumber').value.trim(),
+    city:       document.getElementById('set-city').value.trim()
+  };
+  await db.collection('schools').doc(schoolId).update(updates);
+  sessionStorage.removeItem('schoolProfile');
+  schoolProfile = { ...schoolProfile, ...updates };
+  document.getElementById('sbSchoolName').textContent = updates.schoolName;
+  alert('Settings saved!');
+}
+
+// ── BILLING ──
+async function openPayment() {
+  openRazorpay({
+    amount: 199900, // ₹1999 in paise — Growth plan
+    name: schoolProfile.ownerName || '',
+    email: auth.currentUser.email || '',
+    phone: schoolProfile.phone || '',
+    description: 'CampusPrime Growth Plan',
+    onSuccess: async (resp) => {
+      await db.collection('schools').doc(schoolId).update({
+        plan: 'growth',
+        razorpayPaymentId: resp.razorpay_payment_id,
+        paidAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      sessionStorage.removeItem('schoolProfile');
+      alert('🎉 Payment successful! Your CampusPrime Growth plan is now active.');
+      document.getElementById('trialBanner').style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>
