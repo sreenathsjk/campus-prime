@@ -4,14 +4,14 @@
 // Get them from: Firebase Console → Project Settings → Your Apps
 // ─────────────────────────────────────────────────────
 
-const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "campusprime-XXXXX.firebaseapp.com",
-  projectId:         "campusprime-XXXXX",
-  storageBucket:     "campusprime-XXXXX.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
-};
+ const firebaseConfig = {
+    apiKey:"AIzaSyDIFLO7rwIJbJnAt2EV7m57ydkPfH9FQzA",
+    authDomain:"campus-prime.firebaseapp.com",
+    projectId:"campus-prime",
+    storageBucket:"campus-prime.firebasestorage.app",
+    messagingSenderId:"934780803109",
+    appId:"1:934780803109:web:678a903369166ce72f07cc"
+  };
 
 // ─────────────────────────────────────────────────────
 // Initialize Firebase (compat SDK — works in plain HTML)
